@@ -1,1 +1,1 @@
-# GL2D.js
+# GLContext2D
