@@ -225,7 +225,7 @@ class GLContext2D {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
-  drawRectangle(x, y, width, height, r = 0, g = 0, b = 0, a = 255) {
+  drawRectangle(x, y, width, height, r = 0, g = 0, b = 0, a = 255, alpha = 0) {
     const gl = this._gl;
     const color = [
       r / 255,
@@ -240,6 +240,9 @@ class GLContext2D {
     gl.vertexAttribPointer(this._locations.color.position, 2, gl.FLOAT, false, 0, 0);
 
     let matrix = m4.orthographic(0, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, -1, 1);
+    matrix = m4.translate(matrix, x + width * 0.5, y + height * 0.5, 0);
+    matrix = m4.zRotate(matrix, alpha);
+    matrix = m4.translate(matrix, -(x + width * 0.5), -(y + height * 0.5), 0);
     matrix = m4.translate(matrix, x, y, 0);
     matrix = m4.scale(matrix, width, height, 1);
     gl.uniformMatrix4fv(this._locations.color.matrix, false, matrix);
