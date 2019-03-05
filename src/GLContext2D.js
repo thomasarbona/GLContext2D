@@ -143,7 +143,7 @@ class GLContext2D {
     return (this._gl.drawingBufferHeight);
   }
 
-  createTextureFromAsset(asset) {
+  createTextureFromAsset(asset, magLinearFilter = true) {
     const gl = this._gl;
     const tex = gl.createTexture();
 
@@ -153,8 +153,12 @@ class GLContext2D {
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    if (magLinearFilter) {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    } else {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    }
     gl.texParameteri(gl.TEXTURE_2D, gl.GENERATE_MIPMAP, gl.TRUE);
 
     const textureInfo = {
@@ -172,7 +176,7 @@ class GLContext2D {
 
   // ctx.drawImage(tex, texWidth, texHeight, dstX, dstY);
   // ctx.drawImage(tex, texWidth, texHeight, dstX, dstY, dstWidth, dstHeight);
-  drawImage(tex, texWidth, texHeight, srcX, srcY, srcWidth, srcHeight, dstX, dstY, dstWidth, dstHeight, srcRotation) {
+  drawImage(tex, texWidth, texHeight, srcX, srcY, srcWidth, srcHeight, dstX, dstY, dstWidth, dstHeight, dstRotation) {
     const gl = this._gl;
 
     if (dstX === undefined) {
@@ -197,8 +201,8 @@ class GLContext2D {
       dstHeight = srcHeight;
       srcHeight = texHeight;
     }
-    if (srcRotation === undefined) {
-      srcRotation = 0;
+    if (dstRotation === undefined) {
+      dstRotation = 0;
     }
 
     gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -209,13 +213,15 @@ class GLContext2D {
     gl.vertexAttribPointer(this._locations.texture.position, 2, gl.FLOAT, false, 0, 0);
 
     let matrix = m4.orthographic(0, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, -1, 1);
+    matrix = m4.translate(matrix, dstX + dstWidth * 0.5, dstY + dstHeight * 0.5, 0);
+    matrix = m4.zRotate(matrix, dstRotation);
+    matrix = m4.translate(matrix, -(dstX + dstWidth * 0.5), -(dstY + dstHeight * 0.5), 0);
     matrix = m4.translate(matrix, dstX, dstY, 0);
     matrix = m4.scale(matrix, dstWidth, dstHeight, 1);
     gl.uniformMatrix4fv(this._locations.texture.matrix, false, matrix);
 
     let texMatrix = m4.scaling(1 / texWidth, 1 / texHeight, 1);
     texMatrix = m4.translate(texMatrix, srcX + srcWidth * 0.5, srcY + srcHeight * 0.5, 0);
-    texMatrix = m4.zRotate(texMatrix, srcRotation);
     texMatrix = m4.translate(texMatrix, -(srcX + srcWidth * 0.5), -(srcY + srcHeight * 0.5), 0);
     texMatrix = m4.translate(texMatrix, srcX, srcY, 0);
     texMatrix = m4.scale(texMatrix, srcWidth, srcHeight, 1);
